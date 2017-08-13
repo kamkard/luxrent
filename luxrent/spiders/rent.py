@@ -6,10 +6,17 @@ import scrapy
 class RentSpider(scrapy.Spider):
 	name = 'rent'
 
+	
 	start_urls = ['https://www.amli.com/apartments/austin/central-east-austin/austin/south-shore/floorplans']
 
 	def parse(self, response):
 """
 java link to all rooms
 	 response.xpath('//div[@id="fpHolder"]/a/@href').extract()
+"""
+"""
+Find the apt room infos
+data = response.xpath('//tr[@class="highlightRowClicked" or @class = "highlightRow"]/td/*')
+data.xpath('.//span/text()').extract()
+
 """
