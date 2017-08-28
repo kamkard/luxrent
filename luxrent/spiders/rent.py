@@ -5,6 +5,9 @@ import scrapy
 from scrapy.http import FormRequest
 from scrapy.spider import BaseSpider
 
+from scrapy.utils.response import open_in_browser
+from scrapy.shell import inspect_response
+
 HEADERS = {
 	 'X-MicrosoftAjax': 'Delta=true',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36'
@@ -14,38 +17,38 @@ URL = 'https://www.amli.com/apartments/austin/central-east-austin/austin/south-s
 
 class RentSpider(scrapy.Spider):
 	name = 'rent'
-	page = 0
+	
 	
 	start_urls = [URL]
 
-	def parse(self, response):		
+	def start_requests(self, response):		
 		#submit a form (first page)
-
-		page = 0
+		current_page = 0
 		ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
 		ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
 		EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
+		EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[current_page][25:112]
 
-		self.link = {}
+		
+		#open_in_browser(response)
+		return [FormRequest(
+			url = URL,
+			callback = self.parse,
+			formdata= {
+			'__EVENTTARGET' : EventTargetVariable, 
+			'__EVENTARGUMENT' : '', '__VIEWSTATE' : ViewState,
+			'__VIEWSTATEGENERATOR': ViewStateGenerator, 
+			'__EVENTVALIDATION' : EventValidation,
+			},
+			meta = {'page':0},
+			)]
 
-		self.link['__EVENTTARGET'] = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[page][25:112]
-		self.link['__EVENTARGUMENT'] = ''
-		self.link['__VIEWSTATE'] = ViewState
-		self.link['__VIEWSTATEGENERATOR'] = ViewStateGenerator
-		self.link['__SCROLLPOSITIONX'] = '0'
-		self.link['__SCROLLPOSITIONY'] = '0'
-		self.link['__EVENTVALIDATION'] = EventValidation
+	def parse(self, response):
+		#inspect_response(response,self)
 
-		return FormRequest(url=URL,
-						   method = 'POST',
-						   callback = self.parse_page,
-						   formdata=self.link,
-						   meta = {'page':1},
-						   dont_filter = True,
-						   headers = HEADERS)
-
-	def parse_page(self, response):
+		current_page = response.meta['page'] + 1
 		#Find the apt room infos
+
 		for data in response.xpath('//tr[@class="highlightRowClicked" or @class = "highlightRow"]'):
 			yield {
 
@@ -54,32 +57,30 @@ class RentSpider(scrapy.Spider):
 			'Pets' : data.xpath('.//span[contains(@id, "Pets")]/text()').extract(),
 			'Dates' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
 			'Price' : data.xpath('.//span[contains(@id, "Price")]/text()').extract(),
-
 			}
 
-
 		#Get Next Page
-		page += 1
+		
 		ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
 		ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
 		EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
-
-
-		link = {
-			'__EVENTTARGET' : response.xpath('//div[@id="fpHolder"]/a/@href').extract()[page][25:112], 
-			'__VIEWSTATE' : ViewState,
-			'__VIEWSTATEGENERATOR' : ViewStateGenerator,
-			'__EVENTVALIDATION' : EventValidation,
+		EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[current_page][25:112]
+		yield {
+		'View': ViewStateGenerator,
+		'Target' : EventTargetVariable
 		}
-
-		return FormRequest(url=URL,
-						   method = 'POST',
-						   callback = self.parse_page,
-						   formdata=self.link,
-						   meta = {'page':1},
-						   dont_filter = True,
-						   headers = HEADERS)
-
+		#open_in_browser(response)
+		return [FormRequest(
+			url = URL,
+			callback = self.parse,
+			formdata= {
+			'__EVENTTARGET' : EventTargetVariable, 
+			'__EVENTARGUMENT' : '', '__VIEWSTATE' : ViewState,
+			'__VIEWSTATEGENERATOR': ViewStateGenerator, 
+			'__EVENTVALIDATION' : EventValidation,
+			},
+			meta = {'page': current_page},
+			)]
 			#print(dict(floor=floor, RoomNumber=RoomNumber, Pets=Pets, Dates=Dates, Price=Price))
 
 		#java link to all rooms
