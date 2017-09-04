@@ -14,75 +14,53 @@ HEADERS = {
 }
 
 URL = 'https://www.amli.com/apartments/austin/central-east-austin/austin/south-shore/floorplans' 
+current_page = 0
 
 class RentSpider(scrapy.Spider):
-	name = 'rent'
-	
-	
+	#Spider for finding all rooms available. Right now starting with only South-Shore.
+
+	name = 'rent'	
 	start_urls = [URL]
 
-	def start_requests(self, response):		
-		#submit a form (first page)
-		current_page = 0
-		ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
-		ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
-		EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
-		EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[current_page][25:112]
-
-		
-		#open_in_browser(response)
-		return [FormRequest(
-			url = URL,
-			callback = self.parse,
-			formdata= {
-			'__EVENTTARGET' : EventTargetVariable, 
-			'__EVENTARGUMENT' : '', '__VIEWSTATE' : ViewState,
-			'__VIEWSTATEGENERATOR': ViewStateGenerator, 
-			'__EVENTVALIDATION' : EventValidation,
-			},
-			meta = {'page':0},
-			)]
-
 	def parse(self, response):
-		#inspect_response(response,self)
+		#This is the main crawler that goes through all pages
 
-		current_page = response.meta['page'] + 1
-		#Find the apt room infos
-
-		for data in response.xpath('//tr[@class="highlightRowClicked" or @class = "highlightRow"]'):
-			yield {
-
-			'Floor' : data.xpath('.//span[contains(@id, "Floor")]/text()').extract(),
-			'RoomNumber' : data.xpath('.//span[contains(@id, "Number")]/text()').extract(),
-			'Pets' : data.xpath('.//span[contains(@id, "Pets")]/text()').extract(),
-			'Dates' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
-			'Price' : data.xpath('.//span[contains(@id, "Price")]/text()').extract(),
-			}
-
-		#Get Next Page
-		
-		ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
-		ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
-		EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
-		EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[current_page][25:112]
-		yield {
-		'View': ViewStateGenerator,
-		'Target' : EventTargetVariable
-		}
-		#open_in_browser(response)
-		return [FormRequest(
-			url = URL,
-			callback = self.parse,
-			formdata= {
-			'__EVENTTARGET' : EventTargetVariable, 
-			'__EVENTARGUMENT' : '', '__VIEWSTATE' : ViewState,
-			'__VIEWSTATEGENERATOR': ViewStateGenerator, 
-			'__EVENTVALIDATION' : EventValidation,
-			},
-			meta = {'page': current_page},
-			)]
+		for x in range(len(response.xpath('//div[@id="fpHolder"]/a/@href').extract())):
+			#Get Next Page
+			
+			ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
+			ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
+			EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
+			EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[x+1][25:112]
+			
+			#open_in_browser(response)
+			
+			yield FormRequest(
+				url = URL,
+				callback = self.parse_info,
+				formdata= {
+				'__EVENTTARGET' : EventTargetVariable, 
+				'__EVENTARGUMENT' : '', '__VIEWSTATE' : ViewState,
+				'__VIEWSTATEGENERATOR': ViewStateGenerator, 
+				'__EVENTVALIDATION' : EventValidation,
+				},
+				meta = {'page': x},
+				)
 			#print(dict(floor=floor, RoomNumber=RoomNumber, Pets=Pets, Dates=Dates, Price=Price))
 
+
+	def parse_info(self, response):
+	# Get Results
+		current_page = response.meta['page']
+		for data in response.xpath('//tr[@class="highlightRowClicked" or @class = "highlightRow"]'):
+			yield {
+				'Room' : response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[current_page],
+				'Floor' : data.xpath('.//span[contains(@id, "Floor")]/text()').extract(),
+				'RoomNumber' : data.xpath('.//span[contains(@id, "Number")]/text()').extract(),
+				'Pets' : data.xpath('.//span[contains(@id, "Pets")]/text()').extract(),
+				'Dates' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
+				'Price' : data.xpath('.//span[contains(@id, "Price")]/text()').extract(),
+				}
 		#java link to all rooms
 		
 		#response.xpath('//div[@id="fpHolder"]/a/@href').extract()
