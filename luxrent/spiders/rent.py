@@ -4,17 +4,17 @@ To find rent prices from Amli Southshore only.  Need to build out to find all Am
 import scrapy
 from scrapy.http import FormRequest
 from scrapy.spider import BaseSpider
+import datetime
 
 from scrapy.utils.response import open_in_browser
 from scrapy.shell import inspect_response
 
-HEADERS = {
-	 'X-MicrosoftAjax': 'Delta=true',
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36'
-}
+#HEADERS = {
+#	 'X-MicrosoftAjax': 'Delta=true',
+#   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36'
+#}
 
 URL = 'https://www.amli.com/apartments/austin/central-east-austin/austin/south-shore/floorplans' 
-current_page = 0
 
 class RentSpider(scrapy.Spider):
 	#Spider for finding all rooms available. Right now starting with only South-Shore.
@@ -51,22 +51,29 @@ class RentSpider(scrapy.Spider):
 
 	def parse_info(self, response):
 	# Get Results
-		current_page = response.meta['page']
+	#Format: Date - Company - Building - City - Local Address - Floor Plan - Floor - Room# - Pets - Date Available - Price
+	#format #2: Companies: [CompanyName:, Buildings:[buildingName:, CityAddress: , LocalAddress: , Room[] ]]
+	#				
+		currentFloorPlan = response.meta['page']
+		dateToday = datetime.date.today()
+
+
 		for data in response.xpath('//tr[@class="highlightRowClicked" or @class = "highlightRow"]'):
 			yield {
-				'Room' : response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[current_page],
+				'Date' : dateToday.strftime("%d/%m/%y"),
+				'Company' : response.xpath('//span[@style="font-weight:bold;"]/text()').extract().pop(),
+				'Building' : response.xpath('//span[@style="font-weight:bold;"]/span/text()').extract_first(),
+				'Floor Plan': response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[currentFloorPlan],
+				'City' : response.xpath('//span[@id="ContentMain_communityAddress2"]/text()').extract().pop(),
+				'Local Address' : response.xpath('//span[@id="ContentMain_communityAddress"]/text()').extract().pop(),
 				'Floor' : data.xpath('.//span[contains(@id, "Floor")]/text()').extract(),
-				'RoomNumber' : data.xpath('.//span[contains(@id, "Number")]/text()').extract(),
+				'Room Number' : data.xpath('.//span[contains(@id, "Number")]/text()').extract(),
 				'Pets' : data.xpath('.//span[contains(@id, "Pets")]/text()').extract(),
-				'Dates' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
+				'Date Available' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
 				'Price' : data.xpath('.//span[contains(@id, "Price")]/text()').extract(),
 				}
+		
 		#java link to all rooms
 		
 		#response.xpath('//div[@id="fpHolder"]/a/@href').extract()
 		#response.xpath('//div[@id="fpHolder"]/a/@href').extract()[page][25:112]
-
-
-		
-		
-
