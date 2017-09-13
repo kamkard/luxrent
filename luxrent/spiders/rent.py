@@ -14,20 +14,43 @@ from scrapy.shell import inspect_response
 #   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36'
 #}
 
-URL = 'https://www.amli.com/apartments/austin/central-east-austin/austin/south-shore/floorplans' 
+
 
 class RentSpider(scrapy.Spider):
 	#Spider for finding all rooms available. Right now starting with only South-Shore.
 
+#	start_urls = [
+#	'https://www.amli.com/apartments/austin/central-austin/austin/aldrich/floorplans',
+#	'https://www.amli.com/apartments/austin/central-east-austin/austin/south-shore/floorplans'
+#	] 
 	name = 'rent'	
-	start_urls = [URL]
+
+	def start_requests(self):
+		URLS = [
+		'https://www.amli.com/apartments/austin/central-austin/austin/aldrich/floorplans',
+		'https://www.amli.com/apartments/austin/downtown/austin/eastside/floorplans',
+		'https://www.amli.com/apartments/austin/central-east-austin/austin/south-shore/floorplans',
+		'https://www.amli.com/apartments/austin/central-austin/austin/mueller/floorplans',
+		'https://www.amli.com/apartments/austin/west-austin/austin/covered-bridge/floorplans',
+		'https://www.amli.com/apartments/austin/central-austin/austin/5350/floorplans',
+		'https://www.amli.com/apartments/austin/2nd-street-district/austin/downtown/floorplans',
+		'https://www.amli.com/apartments/austin/downtown/austin/2nd-street/floorplans',
+		'https://www.amli.com/apartments/austin/downtown/austin/300/floorplans'
+		]
+		
+		for page in URLS:
+			yield scrapy.Request (
+				url = page,
+				callback = self.parse,
+				meta = {'URL' : page} )
 
 	def parse(self, response):
 		#This is the main crawler that goes through all pages
 
 		for x in range(len(response.xpath('//div[@id="fpHolder"]/a/@href').extract())):
 			#Get Next Page
-			
+			URL = response.meta['URL']
+
 			ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
 			ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
 			EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
