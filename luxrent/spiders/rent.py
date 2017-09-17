@@ -49,12 +49,13 @@ class RentSpider(scrapy.Spider):
 
 		for x in range(len(response.xpath('//div[@id="fpHolder"]/a/@href').extract())):
 			#Get Next Page
+
 			URL = response.meta['URL']
 
 			ViewState = response.xpath('//input[@id = "__VIEWSTATE"]/@value').extract().pop()
 			ViewStateGenerator = response.xpath('//input[@id = "__VIEWSTATEGENERATOR"]/@value').extract().pop()
 			EventValidation = response.xpath('//input[@id = "__EVENTVALIDATION"]/@value').extract().pop()
-			EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[x+1][25:112]
+			EventTargetVariable = response.xpath('//div[@id="fpHolder"]/a/@href').extract()[x][25:112]
 			
 			#open_in_browser(response)
 			
@@ -63,7 +64,8 @@ class RentSpider(scrapy.Spider):
 				callback = self.parse_info,
 				formdata= {
 				'__EVENTTARGET' : EventTargetVariable, 
-				'__EVENTARGUMENT' : '', '__VIEWSTATE' : ViewState,
+				'__EVENTARGUMENT' : '', 
+				'__VIEWSTATE' : ViewState,
 				'__VIEWSTATEGENERATOR': ViewStateGenerator, 
 				'__EVENTVALIDATION' : EventValidation,
 				},
