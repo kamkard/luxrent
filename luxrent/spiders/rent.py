@@ -5,6 +5,7 @@ import scrapy
 from scrapy.http import FormRequest
 from scrapy.spider import BaseSpider
 import datetime
+from luxrent.items import LuxrentItem
 
 from scrapy.utils.response import open_in_browser
 from scrapy.shell import inspect_response
@@ -84,19 +85,34 @@ class RentSpider(scrapy.Spider):
 
 
 		for data in response.xpath('//tr[@class="highlightRowClicked" or @class = "highlightRow"]'):
-			yield {
-				'Date' : dateToday.strftime("%d/%m/%y"),
-				'Company' : response.xpath('//span[@style="font-weight:bold;"]/text()').extract().pop(),
-				'Building' : response.xpath('//span[@style="font-weight:bold;"]/span/text()').extract_first(),
-				'Floor Plan': response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[currentFloorPlan],
-				'City' : response.xpath('//span[@id="ContentMain_communityAddress2"]/text()').extract().pop(),
-				'Local Address' : response.xpath('//span[@id="ContentMain_communityAddress"]/text()').extract().pop(),
-				'Floor' : data.xpath('.//span[contains(@id, "Floor")]/text()').extract(),
-				'Room Number' : data.xpath('.//span[contains(@id, "Number")]/text()').extract(),
-				'Pets' : data.xpath('.//span[contains(@id, "Pets")]/text()').extract(),
-				'Date Available' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
-				'Price' : data.xpath('.//span[contains(@id, "Price")]/text()').extract(),
-				}
+			item = LuxrentItem()
+			item['Date'] = dateToday.strftime("%d/%m/%y")
+			item['Company'] = response.xpath('//span[@style="font-weight:bold;"]/text()').extract().pop()
+			item['Building'] = response.xpath('//span[@style="font-weight:bold;"]/span/text()').extract_first()
+			item['Floorplan'] = response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[currentFloorPlan]
+			item['City'] = response.xpath('//span[@id="ContentMain_communityAddress2"]/text()').extract().pop()
+			item['Localaddress'] = response.xpath('//span[@id="ContentMain_communityAddress"]/text()').extract().pop()
+			item['Floor'] = data.xpath('.//span[contains(@id, "Floor")]/text()').extract()
+			item['Roomnumber'] = data.xpath('.//span[contains(@id, "Number")]/text()').extract()
+			item['Pets'] = data.xpath('.//span[contains(@id, "Pets")]/text()').extract()
+			item['Dateavailable'] = data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract()
+			item['Price'] = data.xpath('.//span[contains(@id, "Price")]/text()').extract()
+
+
+			yield item 
+			#yield {
+			#	'Date' : dateToday.strftime("%d/%m/%y"),
+			#	'Company' : response.xpath('//span[@style="font-weight:bold;"]/text()').extract().pop(),
+			#	'Building' : response.xpath('//span[@style="font-weight:bold;"]/span/text()').extract_first(),
+			#	'Floor Plan': response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[currentFloorPlan],
+			#	'City' : response.xpath('//span[@id="ContentMain_communityAddress2"]/text()').extract().pop(),
+			#	'Local Address' : response.xpath('//span[@id="ContentMain_communityAddress"]/text()').extract().pop(),
+			#	'Floor' : data.xpath('.//span[contains(@id, "Floor")]/text()').extract(),
+			#	'Room Number' : data.xpath('.//span[contains(@id, "Number")]/text()').extract(),
+			#	'Pets' : data.xpath('.//span[contains(@id, "Pets")]/text()').extract(),
+			#	'Date Available' : data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract(),
+			#	'Price' : data.xpath('.//span[contains(@id, "Price")]/text()').extract(),
+			#	}
 		
 		#java link to all rooms
 		
