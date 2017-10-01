@@ -92,11 +92,11 @@ class RentSpider(scrapy.Spider):
 			item['Floorplan'] = response.xpath('//span[@style = "display: block; font-weight: bold; float:left; margin-left: 10px;"]/span/text()').extract()[currentFloorPlan]
 			item['City'] = response.xpath('//span[@id="ContentMain_communityAddress2"]/text()').extract().pop()
 			item['Localaddress'] = response.xpath('//span[@id="ContentMain_communityAddress"]/text()').extract().pop()
-			item['Floor'] = data.xpath('.//span[contains(@id, "Floor")]/text()').extract()
-			item['Roomnumber'] = data.xpath('.//span[contains(@id, "Number")]/text()').extract()
-			item['Pets'] = data.xpath('.//span[contains(@id, "Pets")]/text()').extract()
-			item['Dateavailable'] = data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract()
-			item['Price'] = data.xpath('.//span[contains(@id, "Price")]/text()').extract()
+			item['Floor'] = data.xpath('.//span[contains(@id, "Floor")]/text()').extract_first()
+			item['Roomnumber'] = data.xpath('.//span[contains(@id, "Number")]/text()').extract_first()
+			item['Pets'] = data.xpath('.//span[contains(@id, "Pets")]/text()').extract_first()
+			item['Dateavailable'] = data.xpath('.//span[contains(@id, "UnitDates")]/text()').extract_first()
+			item['Price'] = data.xpath('.//span[contains(@id, "Price")]/text()').extract_first()
 
 
 			yield item 

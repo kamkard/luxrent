@@ -50,3 +50,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 *.json
+*.sqlite
+*.pyc
+*.db
