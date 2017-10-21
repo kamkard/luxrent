@@ -20,7 +20,7 @@ class LuxrentPipeline(object):
     	self.cur = self.conn.cursor()
 
     def createTables(self):
-    	self.dropLuxTable()
+    	#self.dropLuxTable()
     	self.createLuxTable()
 
     def dropLuxTable(self):
